@@ -1,0 +1,50 @@
+import os
+from kucoin.client import Market
+
+# Paké variabel ti environment
+api_key = os.getenv('68125aea4985e300012f372f')
+api_secret = os.getenv('b586f465-4e8c-49f8-b940-9333c6de6979')
+api_passphrase = os.getenv('Sukabumi@1995')
+
+market = Market()
+
+# Ambil data OHLCV ti KuCoin
+def fetch_ohlcv(symbol="BTC-USDT", interval="15min", limit=96):
+    candles = market.get_kline(symbol, interval)
+    df = pd.DataFrame(candles, columns=["time", "open", "close", "high", "low", "volume", "turnover"])
+    df["close"] = df["close"].astype(float)
+    return df
+
+# Fungsi ngitung RSI
+def compute_rsi(series, period=14):
+    delta = series.diff()
+    gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+    rs = gain / loss
+    return 100 - (100 / (1 + rs))
+
+# Fungsi utama analisa
+def analyze_symbol(symbol):
+    df = fetch_ohlcv(symbol)
+    df["ema10"] = df["close"].ewm(span=10).mean()
+    df["ema30"] = df["close"].ewm(span=30).mean()
+    df["rsi"] = compute_rsi(df["close"])
+
+    latest = df.iloc[-1]
+    harga = latest["close"]
+    ema10 = latest["ema10"]
+    ema30 = latest["ema30"]
+    rsi = latest["rsi"]
+
+    if rsi > 60 and ema10 > ema30 and harga > ema10:
+        return f"{symbol}: Momentum kuat! Bisa nembus target 5%."
+    elif rsi < 30:
+        return f"{symbol}: Harga turun pisan. Siap-siap rebound."
+    else:
+        return f"{symbol}: Henteu aya sinyal kuat."
+
+# Jalankeun analisa BTC
+symbols = ["BTC-USDT"]
+for sym in symbols:
+    hasil = analyze_symbol(sym)
+    print(hasil)
