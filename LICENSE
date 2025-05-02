@@ -21,7 +21,7 @@ def compute_rsi(series, period=14):
 
 # --- Fungsi narik OHLCV ti KuCoin ---
 def fetch_ohlcv(symbol="BTC-USDT", interval="15min", limit=96):
-    candles = market.get_kline(symbol, interval, limit)
+    candles = market.get_kline(symbol, kline_type=interval)
     df = pd.DataFrame(candles, columns=["time", "open", "close", "high", "low", "volume", "turnover"])
     df["close"] = df["close"].astype(float)
     return df
